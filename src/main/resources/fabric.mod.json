@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "afritiers_tagger",
+  "version": "${version}",
+  "name": "AfriTiers Tier Tagger",
+  "icon": "assets/afritiers_tagger/icon.png",
+  "description": "AfriTiers PvP tiers on player nameplates and the Tab list. Matches usernames, including offline accounts.",
+  "environment": "client",
+  "license": "LicenseRef-All-Rights-Reserved",
+  "contact": { "homepage": "https://afritiers.co.za" },
+  "entrypoints": {
+    "client": ["za.co.afritiers.tagger.client.AfriTiersClient"],
+    "modmenu": ["za.co.afritiers.tagger.client.ModMenuIntegration"]
+  },
+  "mixins": ["afritiers_tagger.client.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.2",
+    "java": ">=25",
+    "fabric-api": ">=0.161.0"
+  },
+  "suggests": { "modmenu": ">=20.0.3 <21" }
+}

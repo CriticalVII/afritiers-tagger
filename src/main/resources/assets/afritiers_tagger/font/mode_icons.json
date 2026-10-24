@@ -1,0 +1,21 @@
+{
+  "providers": [
+    { "type": "bitmap", "file": "afritiers_tagger:mode/axe.png", "height": 12, "ascent": 10, "chars": ["\ue000"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/bed-pvp.png", "height": 12, "ascent": 10, "chars": ["\ue001"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/cart.png", "height": 12, "ascent": 10, "chars": ["\ue002"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/creeper.png", "height": 12, "ascent": 10, "chars": ["\ue003"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/diamond-vanilla.png", "height": 12, "ascent": 10, "chars": ["\ue004"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/diapot.png", "height": 12, "ascent": 10, "chars": ["\ue005"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/diasmp.png", "height": 12, "ascent": 10, "chars": ["\ue006"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/mace.png", "height": 12, "ascent": 10, "chars": ["\ue007"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/nethop.png", "height": 12, "ascent": 10, "chars": ["\ue008"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/og-vanilla.png", "height": 12, "ascent": 10, "chars": ["\ue009"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/overall.png", "height": 12, "ascent": 10, "chars": ["\ue00a"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/smp.png", "height": 12, "ascent": 10, "chars": ["\ue00b"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/spear-mace.png", "height": 12, "ascent": 10, "chars": ["\ue00c"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/speed.png", "height": 12, "ascent": 10, "chars": ["\ue00d"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/sword.png", "height": 12, "ascent": 10, "chars": ["\ue00e"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/uhc.png", "height": 12, "ascent": 10, "chars": ["\ue00f"] },
+    { "type": "bitmap", "file": "afritiers_tagger:mode/vanilla.png", "height": 12, "ascent": 10, "chars": ["\ue010"] }
+  ]
+}

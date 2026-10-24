@@ -1,0 +1,102 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.terraformersmc.com/releases/' }
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        afritiers_tagger {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+    runs {
+        client { programArgs '--width', '1100', '--height', '720' }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    clientCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    if (!project.hasProperty('withoutModMenu')) {
+        clientRuntimeOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    }
+    testImplementation platform('org.junit:junit-bom:5.14.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+tasks.withType(JavaCompile).configureEach { options.release = 25 }
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+jar { from('LICENSE') { rename { 'LICENSE_afritiers_tagger' } } }
+test { useJUnitPlatform() }
+
+tasks.register('liveApiSmoke', JavaExec) {
+    description = 'Read the live API once and report normalized counts (no raw response is saved).'
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'za.co.afritiers.tagger.LiveApiSmoke'
+    if (project.hasProperty('profileName')) args project.property('profileName')
+}
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'afritiers_tagger_test'
+        enableGameTests = false
+        enableClientGameTests = true
+    }
+}
+
+// Launch the packaged mod in an isolated production client, with a separate test JAR.
+dependencies {
+    productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    if (!project.hasProperty('withoutModMenu')) {
+        productionRuntimeMods "com.terraformersmc:modmenu:${project.modmenu_version}"
+    }
+}
+
+def gameTestJar = tasks.register('gametestJar', Jar) {
+    from sourceSets.gametest.output
+    archiveClassifier = 'gametest'
+}
+
+tasks.register('runProductionClientGameTest', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    group = 'verification'
+    description = 'Verify the built JAR in an isolated Minecraft client with synthetic rankings.'
+    mods.setFrom(tasks.jar, gameTestJar, configurations.productionRuntimeMods)
+    runDir = layout.buildDirectory.dir('run/productionClientGameTest')
+    jvmArgs.add('-Dfabric.client.gametest=true')
+    programArgs.addAll('--username', 'Player0', '--width', '1100', '--height', '720')
+}
+
+tasks.register('releaseZip', Zip) {
+    group = 'build'
+    description = 'Package the installable mod and its guides without development/test JARs.'
+    dependsOn tasks.build
+    archiveFileName = "afritiers-tagger-${project.version}-mc26.2.zip"
+    destinationDirectory = layout.buildDirectory.dir('distributions')
+    from(tasks.jar)
+    from('README.md', 'CHANGELOG.md', 'VALIDATION.md', 'LICENSE')
+    from('docs') { into 'docs' }
+}
