@@ -34,9 +34,11 @@ public record Rankings(Map<String, List<Tier>> players, List<String> modes,
     }
 
     public Optional<Tier> select(String username, String mode, boolean includeRetired) {
+        ModeIcon selected = ModeIcon.find(mode).orElse(null);
         return players.getOrDefault(Tier.normalizeUsername(username), List.of()).stream()
                 .filter(tier -> includeRetired || !tier.retired())
-                .filter(tier -> mode.equals("strongest") || tier.mode().equals(mode))
+                .filter(tier -> mode.equals("strongest") || tier.mode().equals(mode)
+                        || selected != null && ModeIcon.find(tier.mode()).orElse(null) == selected)
                 .min(Comparator.comparingInt(Tier::strength).thenComparing(Tier::mode)
                         .thenComparing(Tier::retired));
     }

@@ -48,6 +48,7 @@ public enum ModeIcon {
     public String glyph() { return Character.toString(glyph); }
     public String texture() { return texture; }
     public String displayName() { return displayName; }
+    public String primaryMode() { return modes.getFirst(); }
 
     public static Optional<ModeIcon> find(String mode) {
         if (mode == null) return Optional.empty();
