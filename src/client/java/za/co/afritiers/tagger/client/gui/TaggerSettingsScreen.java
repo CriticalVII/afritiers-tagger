@@ -17,10 +17,9 @@ public final class TaggerSettingsScreen extends Screen {
     private final Screen parent;
     private TaggerConfig draft;
     private Component preview = Component.empty();
-    private Button saveButton;
     private EditBox colourField;
     private String feedback = "", validationError = "";
-    private int previewTier = 4;
+    private int previewTier = 0;
     private int panelX, panelY, panelWidth, panelHeight;
     private boolean compact;
 
@@ -40,13 +39,13 @@ public final class TaggerSettingsScreen extends Screen {
         boolean columns = panelWidth >= 320;
         int columnWidth = columns ? (contentWidth - 12) / 2 : contentWidth;
         LinearLayout display = section("Display", columnWidth);
-        display.addChild(new TaggerWidgets.Toggle("Enabled", "Show tier tags", columnWidth, compact, () -> draft.enabled, value -> draft.enabled = value));
-        display.addChild(new TaggerWidgets.Toggle("Nameplates", "Above players", columnWidth, compact, () -> draft.nameplates, value -> draft.nameplates = value));
-        display.addChild(new TaggerWidgets.Toggle("Tab list", "In the player list", columnWidth, compact, () -> draft.tabList, value -> draft.tabList = value));
-        display.addChild(new TaggerWidgets.Toggle("Top 10 rank", "Gold labels #1–#10", columnWidth, compact, () -> draft.showTopTen, value -> draft.showTopTen = value));
+        display.addChild(new TaggerWidgets.Toggle("Enabled", "Show tier tags", columnWidth, compact, () -> draft.enabled, value -> { draft.enabled = value; persist(); }));
+        display.addChild(new TaggerWidgets.Toggle("Nameplates", "Above players", columnWidth, compact, () -> draft.nameplates, value -> { draft.nameplates = value; persist(); }));
+        display.addChild(new TaggerWidgets.Toggle("Tab list", "In the player list", columnWidth, compact, () -> draft.tabList, value -> { draft.tabList = value; persist(); }));
+        display.addChild(new TaggerWidgets.Toggle("Top 10 rank", "Gold labels #1–#10", columnWidth, compact, () -> draft.showTopTen, value -> { draft.showTopTen = value; persist(); }));
         LinearLayout appearance = section("Appearance", columnWidth);
         appearance.addChild(new TaggerWidgets.Mode(columnWidth, compact, this::modeText, pressed -> cycleMode()));
-        appearance.addChild(new TaggerWidgets.Toggle("Retired tiers", "Include past tiers", columnWidth, compact, () -> draft.includeRetired, value -> draft.includeRetired = value));
+        appearance.addChild(new TaggerWidgets.Toggle("Retired tiers", "Include past tiers", columnWidth, compact, () -> draft.includeRetired, value -> { draft.includeRetired = value; persist(); }));
         LinearLayout colour = compact ? LinearLayout.horizontal().spacing(4) : LinearLayout.vertical().spacing(3);
         colour.addChild(new StringWidget(compact ? 43 : columnWidth, compact ? 20 : 12,
                 Component.literal(compact ? "Colour" : "Colour override").withColor(TaggerWidgets.MUTED), font));
@@ -56,7 +55,7 @@ public final class TaggerSettingsScreen extends Screen {
         field.setValue(draft.customColour);
         field.setHint(Component.literal(compact ? "Tier colours" : "Default tier colours"));
         field.setTextColor(0xFFE8ECE9);
-        field.setResponder(value -> { draft.customColour = value; feedback = ""; updatePreview(); });
+        field.setResponder(value -> { draft.customColour = value; updatePreview(); if (validationError.isEmpty()) persist(); });
         field.setTooltip(Tooltip.create(Component.literal("Optional six-digit hex colour, for example FFD700. Leave blank for gold, silver, bronze and gray. Icons keep their own colours.")));
         colour.addChild(field);
         appearance.addChild(colour);
@@ -88,18 +87,15 @@ public final class TaggerSettingsScreen extends Screen {
         addRenderableWidget(details);
         Button reset = TaggerWidgets.action("Reset", 52, false, pressed -> {
             draft = new TaggerConfig();
-            feedback = "Defaults restored. Save to apply.";
+            persist();
             rebuildWidgets();
         });
-        reset.setTooltip(Tooltip.create(Component.literal("Restore default settings in this draft")));
+        reset.setTooltip(Tooltip.create(Component.literal("Restore and save default settings")));
         reset.setPosition(panelX + 12, panelY + panelHeight - (compact ? 27 : 30));
         addRenderableWidget(reset);
-        Button cancel = TaggerWidgets.action("Cancel", 66, false, pressed -> onClose());
-        cancel.setPosition(panelX + panelWidth - 164, panelY + panelHeight - (compact ? 27 : 30));
-        addRenderableWidget(cancel);
-        saveButton = TaggerWidgets.action("Save", 80, true, pressed -> save());
-        saveButton.setPosition(panelX + panelWidth - 92, panelY + panelHeight - (compact ? 27 : 30));
-        addRenderableWidget(saveButton);
+        Button done = TaggerWidgets.action("Done", 80, true, pressed -> onClose());
+        done.setPosition(panelX + panelWidth - 92, panelY + panelHeight - (compact ? 27 : 30));
+        addRenderableWidget(done);
         addTabs();
         updatePreview();
     }
@@ -126,6 +122,7 @@ public final class TaggerSettingsScreen extends Screen {
         Collections.sort(modes);
         modes.addFirst("strongest");
         draft.mode = modes.get((modes.indexOf(draft.mode) + 1) % modes.size());
+        persist();
         updatePreview();
     }
 
@@ -145,9 +142,8 @@ public final class TaggerSettingsScreen extends Screen {
         validationError = "";
         try { sample.validate(); }
         catch (IllegalArgumentException exception) { validationError = exception.getMessage(); sample.customColour = ""; }
-        preview = Component.empty().append(TagFormatter.placement(draft.showTopTen ? 1 : 0)).append(TagFormatter.tag(new Tier(draft.mode.equals("strongest") ? "mace" : draft.mode,
+        preview = Component.empty().append(TagFormatter.placement(1)).append(TagFormatter.tag(new Tier("sword",
                 Tier.ORDER.get(previewTier), false), sample)).append("PlayerName");
-        if (saveButton != null) saveButton.active = validationError.isEmpty();
         if (colourField != null) {
             colourField.setTextColor(validationError.isEmpty() ? TaggerWidgets.TEXT : 0xFFE0BE83);
             if (!previousError.equals(validationError)) colourField.setTooltip(Tooltip.create(Component.literal(validationError.isEmpty()
@@ -155,8 +151,11 @@ public final class TaggerSettingsScreen extends Screen {
         }
     }
 
-    private void save() {
-        try { AfriTiersClient.instance().saveConfig(draft); onClose(); }
+    private void persist() {
+        TaggerConfig edited = draft.copy();
+        // An unfinished colour entry must not prevent independent toggles from saving.
+        if (!validationError.isEmpty()) edited.customColour = AfriTiersClient.instance().config().customColour;
+        try { AfriTiersClient.instance().saveConfig(edited); feedback = "Saved automatically"; }
         catch (java.io.IOException | IllegalArgumentException exception) {
             feedback = exception instanceof IllegalArgumentException ? exception.getMessage() : "Could not save. Check config folder permissions.";
         }
@@ -195,7 +194,7 @@ public final class TaggerSettingsScreen extends Screen {
         else if (compact && !feedback.isEmpty()) summary = feedback;
         g.fill(x, statusY + 2, x + 3, statusY + 5, statusColor);
         g.text(font, font.plainSubstrByWidth(summary, panelWidth - 152), x + 9, statusY, TaggerWidgets.MUTED, false);
-        String note = !validationError.isEmpty() ? validationError : !feedback.isEmpty() ? feedback : "Changes apply when saved";
+        String note = !validationError.isEmpty() ? validationError : !feedback.isEmpty() ? feedback : "Settings save automatically";
         if (!compact) g.text(font, font.plainSubstrByWidth(note, panelWidth - 24), x, panelY + panelHeight - 43,
                 validationError.isEmpty() && feedback.isEmpty() ? TaggerWidgets.MUTED : 0xFFE0BE83, false);
         super.extractRenderState(g, mouseX, mouseY, delta);
