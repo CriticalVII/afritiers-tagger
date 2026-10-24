@@ -43,7 +43,6 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach { options.release = 25 }
 java {
-    withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
 }
@@ -88,15 +87,4 @@ tasks.register('runProductionClientGameTest', net.fabricmc.loom.task.prod.Client
     runDir = layout.buildDirectory.dir('run/productionClientGameTest')
     jvmArgs.add('-Dfabric.client.gametest=true')
     programArgs.addAll('--username', 'Player0', '--width', '1100', '--height', '720')
-}
-
-tasks.register('releaseZip', Zip) {
-    group = 'build'
-    description = 'Package the installable mod and its guides without development/test JARs.'
-    dependsOn tasks.build
-    archiveFileName = "afritiers-tagger-${project.version}-mc26.2.zip"
-    destinationDirectory = layout.buildDirectory.dir('distributions')
-    from(tasks.jar)
-    from('README.md', 'CHANGELOG.md', 'VALIDATION.md', 'LICENSE')
-    from('docs') { into 'docs' }
 }

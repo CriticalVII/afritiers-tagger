@@ -29,29 +29,21 @@ class ModePresentationTest {
         assertEquals(ModeIcon.OVERALL, ModeIcon.forMode("new_mode"));
     }
 
-    @Test void everyMappedGlyphHasOneBundledFontProviderAndReadablePng() throws Exception {
-        try (var stream = getClass().getResourceAsStream("/assets/afritiers_tagger/font/mode_icons.json")) {
+    @Test void everyMappedGlyphHasUniqueGlyphAndValidUvBounds() throws Exception {
+        try (var stream = getClass().getResourceAsStream("/assets/afritiers_tagger/mode_bounds.json")) {
             assertNotNull(stream);
-            var providers = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
-                    .getAsJsonObject().getAsJsonArray("providers");
-            assertEquals(ModeIcon.values().length, providers.size());
+            var bounds = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
+            assertEquals(ModeIcon.values().length, bounds.size());
             var found = new HashSet<String>();
-            for (var entry : providers) {
-                var provider = entry.getAsJsonObject();
-                String glyph = provider.getAsJsonArray("chars").get(0).getAsString();
-                assertTrue(found.add(glyph), "Duplicate icon glyph");
-                String resource = provider.get("file").getAsString();
-                try (var imageStream = getClass().getResourceAsStream("/assets/" + resource.replace(":", "/textures/"))) {
-                    assertNotNull(imageStream, resource);
-                    var image = javax.imageio.ImageIO.read(imageStream);
-                    assertNotNull(image, resource);
-                    assertTrue(image.getColorModel().hasAlpha(), resource);
-                }
-                for (var icon : ModeIcon.values()) {
-                    if (icon.glyph().equals(glyph)) assertEquals("afritiers_tagger:mode/" + icon.texture() + ".png", resource);
-                }
+            for (var icon : ModeIcon.values()) {
+                assertTrue(found.add(icon.glyph()), "Duplicate icon glyph");
+                assertTrue(bounds.has(icon.texture()), "Missing icon bounds: " + icon.texture());
+                var window = bounds.getAsJsonArray(icon.texture());
+                assertEquals(4, window.size());
+                for (var value : window) assertTrue(value.getAsDouble() >= 0 && value.getAsDouble() <= 1);
+                assertTrue(window.get(0).getAsDouble() < window.get(2).getAsDouble());
+                assertTrue(window.get(1).getAsDouble() < window.get(3).getAsDouble());
             }
-            for (var icon : ModeIcon.values()) assertTrue(found.contains(icon.glyph()));
         }
     }
 
