@@ -31,6 +31,15 @@ public final class PaidNameResolver implements AutoCloseable {
         if (!active) { queued.clear(); status = "Paused"; }
         else status = "Ready";
     }
+    /** A new server must not inherit cached name results or pending work from the previous one. */
+    public synchronized void resetSession() {
+        if (closed) return;
+        generation++;
+        queued.clear();
+        cache.clear();
+        status = active ? "Ready" : "Paused";
+        // Preserve retryAt so changing servers cannot bypass the lookup service's cooldown.
+    }
     public synchronized void request(String username) {
         if (!active || closed || username == null || !username.matches("[A-Za-z0-9_]{1,16}")) return;
         String key = Tier.normalizeUsername(username);

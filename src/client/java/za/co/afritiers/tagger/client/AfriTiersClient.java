@@ -55,7 +55,10 @@ public final class AfriTiersClient implements ClientModInitializer {
         KeyMapping openSettings = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.afritiers_tagger.settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K,
                 KeyMapping.Category.register(Identifier.fromNamespaceAndPath("afritiers_tagger", "controls"))));
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> repository.connect());
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            paidNames.resetSession();
+            repository.connect();
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { repository.disconnect(); paidNames.setActive(false); });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { repository.close(); browser.close(); paidNames.close(); });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
