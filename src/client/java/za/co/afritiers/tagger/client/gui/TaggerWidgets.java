@@ -89,7 +89,7 @@ final class TaggerWidgets {
             });
             this.value = value;
             setMessage(Component.literal("Ranking mode: ").append(value.get()));
-            setTooltip(Tooltip.create(Component.literal("Click to cycle ranking modes. Strongest tier selects each player's best eligible ranking.")));
+            setTooltip(Tooltip.create(Component.literal("Choose from every mode. Strongest tier selects each player's best eligible ranking.")));
         }
         @Override protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
             row(g, this, hoverAmount());

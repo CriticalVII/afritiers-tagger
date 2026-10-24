@@ -44,7 +44,8 @@ public final class TaggerSettingsScreen extends Screen {
         display.addChild(new TaggerWidgets.Toggle("Tab list", "In the player list", columnWidth, compact, () -> draft.tabList, value -> { draft.tabList = value; persist(); }));
         display.addChild(new TaggerWidgets.Toggle("Top 10 rank", "Gold labels #1–#10", columnWidth, compact, () -> draft.showTopTen, value -> { draft.showTopTen = value; persist(); }));
         LinearLayout appearance = section("Appearance", columnWidth);
-        appearance.addChild(new TaggerWidgets.Mode(columnWidth, compact, this::modeText, pressed -> cycleMode()));
+        appearance.addChild(new TaggerWidgets.Mode(columnWidth, compact, this::modeText,
+                pressed -> minecraft.gui.setScreen(new ModePickerScreen(this, draft.mode))));
         appearance.addChild(new TaggerWidgets.Toggle("Retired tiers", "Include past tiers", columnWidth, compact, () -> draft.includeRetired, value -> { draft.includeRetired = value; persist(); }));
         LinearLayout colour = compact ? LinearLayout.horizontal().spacing(4) : LinearLayout.vertical().spacing(3);
         colour.addChild(new StringWidget(compact ? 43 : columnWidth, compact ? 20 : 12,
@@ -116,12 +117,8 @@ public final class TaggerSettingsScreen extends Screen {
         return layout;
     }
 
-    private void cycleMode() {
-        List<String> modes = new ArrayList<>(AfriTiersClient.instance().repository().state().rankings().modes());
-        if (!draft.mode.equals("strongest") && !modes.contains(draft.mode)) modes.add(draft.mode);
-        Collections.sort(modes);
-        modes.addFirst("strongest");
-        draft.mode = modes.get((modes.indexOf(draft.mode) + 1) % modes.size());
+    void selectMode(String mode) {
+        draft.mode = mode;
         persist();
         updatePreview();
     }
