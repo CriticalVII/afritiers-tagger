@@ -1,4 +1,4 @@
-package za.co.afritiers.tagger.client;
+package za.co.afritiers.tagger.client.gui;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.*;
@@ -8,6 +8,8 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
+import za.co.afritiers.tagger.client.AfriTiersClient;
+import za.co.afritiers.tagger.client.ModeIcons;
 import za.co.afritiers.tagger.network.RankingRepository;
 import za.co.afritiers.tagger.ranking.*;
 

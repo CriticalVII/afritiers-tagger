@@ -49,9 +49,9 @@ Settings are saved in `config/afritiers_tagger.json`. Rankings refresh automatic
 
 ## Build
 
-Use JDK 25 and run `./gradlew build`, or `.\gradlew.bat build` on Windows. The build writes the mod JAR to `build/libs/`. Security regression tests and GitHub build checks are retained, including HTTP limits, identity matching and configuration validation. Native client checks run with `runProductionClientGameTest`, with optional `-PwithoutModMenu`.
+Use JDK 25 and run `./gradlew build`, or `.\gradlew.bat build` on Windows. The build writes the mod JAR to `build/libs/`.
 
-The repository contains runtime source/assets, build files, regression tests and the latest released JAR in `releases/`.
+The repository contains production source/assets, build files and the latest released JAR in `releases/`.
 
 ## License
 

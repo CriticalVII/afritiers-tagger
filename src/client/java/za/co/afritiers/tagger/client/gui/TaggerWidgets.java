@@ -1,4 +1,4 @@
-package za.co.afritiers.tagger.client;
+package za.co.afritiers.tagger.client.gui;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

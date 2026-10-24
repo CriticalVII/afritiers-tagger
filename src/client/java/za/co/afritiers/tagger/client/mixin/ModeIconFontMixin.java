@@ -16,7 +16,7 @@ import za.co.afritiers.tagger.client.ModeIcons;
 import za.co.afritiers.tagger.client.ModeIconBounds;
 
 @Mixin(Font.class)
-public abstract class FontManagerMixin {
+public abstract class ModeIconFontMixin {
     @Shadow @Final private Font.Provider provider;
     @Unique private final java.util.Map<FontDescription, GlyphSource[]> afritiers$icons = new java.util.HashMap<>();
     @Inject(method = "getGlyphSource", at = @At("RETURN"), cancellable = true)

@@ -2,7 +2,6 @@ package za.co.afritiers.tagger.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.*;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -10,15 +9,23 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import za.co.afritiers.tagger.config.*;
-import za.co.afritiers.tagger.network.*;
+import za.co.afritiers.tagger.client.command.AfriTiersCommands;
+import za.co.afritiers.tagger.client.gui.TaggerSettingsScreen;
+import za.co.afritiers.tagger.config.ConfigStore;
+import za.co.afritiers.tagger.config.TaggerConfig;
+import za.co.afritiers.tagger.network.HttpProfileLookup;
+import za.co.afritiers.tagger.network.HttpRankingSource;
+import za.co.afritiers.tagger.network.PaidNameResolver;
+import za.co.afritiers.tagger.network.RankingRepository;
+import za.co.afritiers.tagger.ranking.Rankings;
+import za.co.afritiers.tagger.ranking.Tier;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
 
 public final class AfriTiersClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("afritiers_tagger");
@@ -57,43 +64,7 @@ public final class AfriTiersClient implements ClientModInitializer {
             updatePaidNames(client);
             while (openSettings.consumeClick()) client.gui.setScreen(new TaggerSettingsScreen(client.gui.screen()));
         });
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                ClientCommands.literal("afritiers")
-                        .then(aliasCommand())
-                        .then(ClientCommands.literal("config").requires(FabricClientCommandSource::attended).executes(context -> {
-                            // Delay until chat has closed, otherwise chat replaces the new screen.
-                            Minecraft client = context.getSource().getClient();
-                            client.schedule(() -> client.gui.setScreen(new TaggerSettingsScreen(null)));
-                            return 1;
-                        }))
-                        .then(ClientCommands.literal("refresh").requires(FabricClientCommandSource::attended).executes(context -> {
-                            context.getSource().sendFeedback(Component.literal(repository.refresh()));
-                            return 1;
-                        }))
-                        .then(ClientCommands.literal("status").executes(context -> {
-                            var state = repository.state();
-                            context.getSource().sendFeedback(Component.literal("AfriTiers: " + state.message()
-                                    + " | " + state.rankings().players().size() + " usernames"
-                                    + " | ambiguous: " + state.rankings().ambiguousNames()
-                                    + " | Nameplates: " + (config.nameplates ? "ON" : "OFF")
-                                    + " | Tab: " + (config.tabList ? "ON" : "OFF")
-                                    + " | Mode: " + config.mode));
-                            return 1;
-                        }).then(ClientCommands.argument("username", com.mojang.brigadier.arguments.StringArgumentType.word())
-                                .executes(context -> {
-                                    String username = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "username");
-                                    var rankings = repository.state().rankings();
-                                    String apiName = rankingUsername(username);
-                                    String result = rankings.select(apiName, config.mode, config.includeRetired)
-                                            .map(tier -> tier.label())
-                                            .orElseGet(() -> rankings.players().containsKey(apiName)
-                                                    ? "No tier matches the selected mode/retired settings"
-                                                    : "No matching ranking yet; " + paidNames.status());
-                                    context.getSource().sendFeedback(Component.literal("AfriTiers: " + username + " | " + result
-                                            + (apiName.isEmpty() || apiName.equalsIgnoreCase(username) ? "" : " | API name: " + apiName)
-                                            + " | Nameplates: " + (config.nameplates ? "ON" : "OFF")));
-                                    return 1;
-                                })))));
+        AfriTiersCommands.register(this);
         LOGGER.info("AfriTiers ready: username matching, verified paid-account rename recovery");
         if (!store.warning().isEmpty()) LOGGER.warn("{}", store.warning());
     }
@@ -111,8 +82,8 @@ public final class AfriTiersClient implements ClientModInitializer {
         return rankingUsername(username, repository.state().rankings());
     }
 
-    public String rankingUsername(String username, za.co.afritiers.tagger.ranking.Rankings rankings) {
-        String key = za.co.afritiers.tagger.ranking.Tier.normalizeUsername(username);
+    public String rankingUsername(String username, Rankings rankings) {
+        String key = Tier.normalizeUsername(username);
         boolean direct = rankings.players().containsKey(key);
         // Cracked records and paid records without a usable paid ID remain username-only.
         if (direct && !rankings.paidProfiles().containsValue(key)) return key;
@@ -142,7 +113,7 @@ public final class AfriTiersClient implements ClientModInitializer {
 
     public void requestPlayerSearch(String username) {
         var rankings = playerSearchRepository().state().rankings();
-        String key = za.co.afritiers.tagger.ranking.Tier.normalizeUsername(username);
+        String key = Tier.normalizeUsername(username);
         if (rankings.players().containsKey(key) && !rankings.paidProfiles().containsValue(key)) return;
         if (config.usernameAliases.containsKey(key)) return;
         if (!rankings.paidProfiles().isEmpty()) paidNames.request(username);
@@ -153,52 +124,15 @@ public final class AfriTiersClient implements ClientModInitializer {
         paidNames.setActive(active);
         var rankings = repository.state().rankings();
         if (!active || client.player == null || rankings.paidProfiles().isEmpty()) return;
-        java.util.LinkedHashSet<String> names = new java.util.LinkedHashSet<>();
+        LinkedHashSet<String> names = new LinkedHashSet<>();
         names.add(client.player.getGameProfile().name());
         client.level.players().stream().limit(80).forEach(player -> names.add(player.getGameProfile().name()));
         client.getConnection().getListedOnlinePlayers().stream().limit(80).forEach(info -> names.add(info.getProfile().name()));
         for (String username : names) {
-            String key = za.co.afritiers.tagger.ranking.Tier.normalizeUsername(username);
+            String key = Tier.normalizeUsername(username);
             if (rankings.players().containsKey(key) && !rankings.paidProfiles().containsValue(key)) continue;
             if (!rankings.players().containsKey(key) && config.usernameAliases.containsKey(key)) continue;
             paidNames.request(username);
         }
-    }
-
-    private com.mojang.brigadier.builder.LiteralArgumentBuilder<FabricClientCommandSource> aliasCommand() {
-        return ClientCommands.literal("alias")
-                .then(ClientCommands.literal("set").requires(FabricClientCommandSource::attended)
-                        .then(ClientCommands.argument("current", com.mojang.brigadier.arguments.StringArgumentType.word())
-                                .then(ClientCommands.argument("apiName", com.mojang.brigadier.arguments.StringArgumentType.word())
-                                        .suggests((context, builder) -> {
-                                            repository.state().rankings().players().keySet().stream().sorted()
-                                                    .filter(name -> name.startsWith(builder.getRemainingLowerCase())).forEach(builder::suggest);
-                                            return builder.buildFuture();
-                                        }).executes(context -> {
-                                            String current = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "current");
-                                            String api = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "apiName");
-                                            var edited = config();
-                                            edited.usernameAliases.put(current.toLowerCase(java.util.Locale.ROOT), api);
-                                            try {
-                                                saveConfig(edited);
-                                                context.getSource().sendFeedback(Component.literal("Saved username alias: " + current + " -> " + api));
-                                                return 1;
-                                            } catch (IOException | IllegalArgumentException exception) {
-                                                context.getSource().sendError(Component.literal("Could not save alias: " + exception.getMessage())); return 0;
-                                            }
-                                        }))))
-                .then(ClientCommands.literal("remove").requires(FabricClientCommandSource::attended)
-                        .then(ClientCommands.argument("current", com.mojang.brigadier.arguments.StringArgumentType.word()).executes(context -> {
-                            String current = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "current");
-                            var edited = config();
-                            edited.usernameAliases.remove(current.toLowerCase(java.util.Locale.ROOT));
-                            try { saveConfig(edited); context.getSource().sendFeedback(Component.literal("Removed username alias: " + current)); return 1; }
-                            catch (IOException | IllegalArgumentException exception) {
-                                context.getSource().sendError(Component.literal("Could not save aliases: " + exception.getMessage())); return 0;
-                            }
-                        })))
-                .then(ClientCommands.literal("list").executes(context -> {
-                    context.getSource().sendFeedback(Component.literal("Username aliases: " + new java.util.TreeMap<>(config.usernameAliases))); return 1;
-                }));
     }
 }

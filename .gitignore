@@ -18,3 +18,9 @@ PROJECT_PLAN.md
 .DS_Store
 Thumbs.db
 crash-reports/
+
+# Local verification code and tools are not published
+.local-dev/
+src/test/
+src/gametest/
+.github/workflows/
