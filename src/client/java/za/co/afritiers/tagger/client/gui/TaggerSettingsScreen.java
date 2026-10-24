@@ -105,8 +105,8 @@ public final class TaggerSettingsScreen extends Screen {
         Button settings = new TaggerWidgets.Action("Settings", 64, 18, true, pressed -> { });
         settings.setPosition(panelX + panelWidth - 148, panelY + 9);
         addRenderableWidget(settings);
-        Button search = new TaggerWidgets.Action("Players", 64, 18, false,
-                pressed -> minecraft.gui.setScreen(new PlayerSearchScreen(this)));
+        Button search = new TaggerWidgets.Action("Profiles", 64, 18, false,
+                pressed -> minecraft.gui.setScreen(new ProfilesScreen(this)));
         search.setPosition(panelX + panelWidth - 78, panelY + 9);
         addRenderableWidget(search);
     }
