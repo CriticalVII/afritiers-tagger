@@ -12,7 +12,7 @@ import za.co.afritiers.tagger.config.TaggerConfig;
 import za.co.afritiers.tagger.ranking.Tier;
 import java.util.*;
 
-/** Native settings with a pinned live preview, scrollable controls and fixed actions. */
+/** Translucent native settings with immediate persistence and a pinned reference preview. */
 public final class TaggerSettingsScreen extends Screen {
     private final Screen parent;
     private TaggerConfig draft;
@@ -30,20 +30,20 @@ public final class TaggerSettingsScreen extends Screen {
     }
 
     @Override protected void init() {
-        panelWidth = Math.min(460, width - 20);
-        panelHeight = Math.min(326, height - 16);
+        panelWidth = Math.min(520, width - 20);
+        panelHeight = Math.min(348, height - 16);
         panelX = (width - panelWidth) / 2;
         panelY = (height - panelHeight) / 2;
         compact = panelHeight < 300;
         int contentWidth = panelWidth - 34;
         boolean columns = panelWidth >= 320;
         int columnWidth = columns ? (contentWidth - 12) / 2 : contentWidth;
-        LinearLayout display = section("Display", columnWidth);
+        LinearLayout display = section("VISIBILITY", columnWidth);
         display.addChild(new TaggerWidgets.Toggle("Enabled", "Show tier tags", columnWidth, compact, () -> draft.enabled, value -> { draft.enabled = value; persist(); }));
         display.addChild(new TaggerWidgets.Toggle("Nameplates", "Above players", columnWidth, compact, () -> draft.nameplates, value -> { draft.nameplates = value; persist(); }));
         display.addChild(new TaggerWidgets.Toggle("Tab list", "In the player list", columnWidth, compact, () -> draft.tabList, value -> { draft.tabList = value; persist(); }));
         display.addChild(new TaggerWidgets.Toggle("Top 10 rank", "Gold labels #1–#10", columnWidth, compact, () -> draft.showTopTen, value -> { draft.showTopTen = value; persist(); }));
-        LinearLayout appearance = section("Appearance", columnWidth);
+        LinearLayout appearance = section("RANKINGS & COLOUR", columnWidth);
         appearance.addChild(new TaggerWidgets.Mode(columnWidth, compact, this::modeText,
                 pressed -> minecraft.gui.setScreen(new ModePickerScreen(this, draft.mode))));
         appearance.addChild(new TaggerWidgets.Toggle("Retired tiers", "Include past tiers", columnWidth, compact, () -> draft.includeRetired, value -> { draft.includeRetired = value; persist(); }));
@@ -53,11 +53,12 @@ public final class TaggerSettingsScreen extends Screen {
         EditBox field = new EditBox(font, compact ? columnWidth - 47 : columnWidth, 20, Component.literal("Colour override; blank uses tier colours"));
         colourField = field;
         field.setMaxLength(7);
+        field.setBordered(false);
         field.setValue(draft.customColour);
         field.setHint(Component.literal(compact ? "Tier colours" : "Default tier colours"));
         field.setTextColor(0xFFE8ECE9);
         field.setResponder(value -> { draft.customColour = value; updatePreview(); if (validationError.isEmpty()) persist(); });
-        field.setTooltip(Tooltip.create(Component.literal("Optional six-digit hex colour, for example FFD700. Leave blank for gold, silver, bronze and gray. Icons keep their own colours.")));
+        field.setTooltip(Tooltip.create(Component.literal("Optional six-digit hex colour, for example FFD700. Leave blank for gold, silver, bronze and purple. Icons keep their own colours.")));
         colour.addChild(field);
         appearance.addChild(colour);
         LinearLayout controls = columns ? LinearLayout.horizontal().spacing(12) : LinearLayout.vertical().spacing(12);
@@ -102,17 +103,17 @@ public final class TaggerSettingsScreen extends Screen {
     }
 
     private void addTabs() {
-        Button settings = new TaggerWidgets.Action("Settings", 64, 18, true, pressed -> { });
+        Button settings = new TaggerWidgets.Tab("Settings", true, pressed -> { });
         settings.setPosition(panelX + panelWidth - 148, panelY + 9);
         addRenderableWidget(settings);
-        Button search = new TaggerWidgets.Action("Profiles", 64, 18, false,
+        Button search = new TaggerWidgets.Tab("Profiles", false,
                 pressed -> minecraft.gui.setScreen(new ProfilesScreen(this)));
         search.setPosition(panelX + panelWidth - 78, panelY + 9);
         addRenderableWidget(search);
     }
 
     private LinearLayout section(String heading, int sectionWidth) {
-        LinearLayout layout = LinearLayout.vertical().spacing(0);
+        LinearLayout layout = LinearLayout.vertical().spacing(3);
         layout.addChild(new StringWidget(sectionWidth, 18, Component.literal(heading).withColor(TaggerWidgets.GREEN), font));
         return layout;
     }
@@ -140,7 +141,7 @@ public final class TaggerSettingsScreen extends Screen {
         try { sample.validate(); }
         catch (IllegalArgumentException exception) { validationError = exception.getMessage(); sample.customColour = ""; }
         preview = Component.empty().append(TagFormatter.placement(1)).append(TagFormatter.tag(new Tier("sword",
-                Tier.ORDER.get(previewTier), false), sample)).append("PlayerName");
+                Tier.ORDER.get(previewTier), false), sample)).append(minecraft.getUser().getName());
         if (colourField != null) {
             colourField.setTextColor(validationError.isEmpty() ? TaggerWidgets.TEXT : 0xFFE0BE83);
             if (!previousError.equals(validationError)) colourField.setTooltip(Tooltip.create(Component.literal(validationError.isEmpty()
@@ -161,16 +162,22 @@ public final class TaggerSettingsScreen extends Screen {
     @Override public void tick() { updatePreview(); }
 
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-        g.fill(0, 0, width, height, 0x65080D0F);
+        g.fill(0, 0, width, height, 0x28090A13);
         TaggerWidgets.panel(g, panelX, panelY, panelWidth, panelHeight);
-        g.text(font, Component.literal("AfriTiers").withStyle(style -> style.withBold(true)), panelX + 12, panelY + 13, TaggerWidgets.TEXT);
+        g.text(font, Component.literal("AfriTiers").withStyle(style -> style.withBold(true)), panelX + 12, panelY + (compact ? 13 : 10), TaggerWidgets.TEXT);
+        if (!compact) g.text(font, "TIER TAGGER", panelX + 12, panelY + 22, TaggerWidgets.MUTED);
         g.fill(panelX + 12, panelY + (compact ? 26 : 32), panelX + panelWidth - 12, panelY + (compact ? 27 : 33), TaggerWidgets.LINE);
         int x = panelX + 12, y = panelY + (compact ? 34 : 42), w = panelWidth - 24;
         int previewHeight = compact ? 36 : 50;
-        g.fill(x, y, x + w, y + previewHeight, 0xFF12191C);
-        g.outline(x, y, w, previewHeight, 0xFF0C1113);
-        g.text(font, "Name preview", x + 10, y + (compact ? 6 : 8), TaggerWidgets.MUTED, false);
+        g.fill(x, y, x + w, y + previewHeight, 0x40110D20);
+        g.fill(x, y, x + 2, y + previewHeight, 0xAA85DBDA);
+        g.text(font, "NAMEPLATE PREVIEW", x + 10, y + (compact ? 6 : 8), TaggerWidgets.MUTED);
         g.centeredText(font, preview, x + w / 2, y + (compact ? 22 : 29), TaggerWidgets.TEXT);
+        if (colourField != null) {
+            g.fill(colourField.getX() - 4, colourField.getY() - 3, colourField.getRight() + 2, colourField.getBottom(), 0x50130F20);
+            g.fill(colourField.getX() - 4, colourField.getBottom(), colourField.getRight() + 2, colourField.getBottom() + 1,
+                    validationError.isEmpty() ? TaggerWidgets.LINE : 0xFFE0BE83);
+        }
         var state = AfriTiersClient.instance().repository().state();
         int statusColor = switch (state.phase()) {
             case READY -> TaggerWidgets.GREEN;
@@ -190,10 +197,10 @@ public final class TaggerSettingsScreen extends Screen {
         if (compact && !validationError.isEmpty()) summary = validationError;
         else if (compact && !feedback.isEmpty()) summary = feedback;
         g.fill(x, statusY + 2, x + 3, statusY + 5, statusColor);
-        g.text(font, font.plainSubstrByWidth(summary, panelWidth - 152), x + 9, statusY, TaggerWidgets.MUTED, false);
+        g.text(font, font.plainSubstrByWidth(summary, panelWidth - 152), x + 9, statusY, TaggerWidgets.MUTED);
         String note = !validationError.isEmpty() ? validationError : !feedback.isEmpty() ? feedback : "Settings save automatically";
         if (!compact) g.text(font, font.plainSubstrByWidth(note, panelWidth - 24), x, panelY + panelHeight - 43,
-                validationError.isEmpty() && feedback.isEmpty() ? TaggerWidgets.MUTED : 0xFFE0BE83, false);
+                validationError.isEmpty() ? TaggerWidgets.MUTED : 0xFFE0BE83);
         super.extractRenderState(g, mouseX, mouseY, delta);
     }
 
