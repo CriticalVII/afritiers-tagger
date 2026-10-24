@@ -25,7 +25,7 @@ public final class ModePickerScreen extends Screen {
     }
 
     @Override protected void init() {
-        w = Math.min(520, width - 20); h = Math.min(340, height - 16);
+        w = Math.min(520, width - 20); h = Math.min(348, height - 16);
         x = (width - w) / 2; y = (height - h) / 2;
         var available = AfriTiersClient.instance().repository().state().rankings().modes();
         Set<String> modes = new LinkedHashSet<>();
@@ -39,13 +39,13 @@ public final class ModePickerScreen extends Screen {
         if (!selected.equals("strongest") && modes.stream().noneMatch(this::isSelected)) modes.add(selected);
         int columns = w >= 320 ? 2 : 1;
         int cellWidth = (w - 36 - (columns - 1) * 8) / columns;
-        LinearLayout list = LinearLayout.vertical().spacing(5);
+        LinearLayout list = LinearLayout.vertical().spacing(3);
         LinearLayout row = null;
         int index = 0;
         for (String mode : modes) {
             if (index++ % columns == 0) { row = LinearLayout.horizontal().spacing(8); list.addChild(row); }
             String name = mode.equals("strongest") ? "Strongest tier" : Tier.modeLabel(mode);
-            var button = new TaggerWidgets.Action(name, cellWidth, 28, isSelected(mode), pressed -> {
+            var button = new TaggerWidgets.Action(name, cellWidth, 24, isSelected(mode), pressed -> {
                 owner.selectMode(mode); onClose();
             });
             button.setMessage(Component.empty().append(ModeIcons.component(mode)).append(" " + name));

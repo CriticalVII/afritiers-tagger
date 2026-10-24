@@ -10,7 +10,6 @@ import za.co.afritiers.tagger.client.ModeIcons;
 import za.co.afritiers.tagger.client.TagFormatter;
 import za.co.afritiers.tagger.config.TaggerConfig;
 import za.co.afritiers.tagger.ranking.Tier;
-import java.util.*;
 
 /** Translucent native settings with immediate persistence and a pinned reference preview. */
 public final class TaggerSettingsScreen extends Screen {
@@ -50,12 +49,12 @@ public final class TaggerSettingsScreen extends Screen {
         LinearLayout colour = compact ? LinearLayout.horizontal().spacing(4) : LinearLayout.vertical().spacing(3);
         colour.addChild(new StringWidget(compact ? 43 : columnWidth, compact ? 20 : 12,
                 Component.literal(compact ? "Colour" : "Colour override").withColor(TaggerWidgets.MUTED), font));
-        EditBox field = new EditBox(font, compact ? columnWidth - 47 : columnWidth, 20, Component.literal("Colour override; blank uses tier colours"));
+        EditBox field = new TaggerWidgets.Input(compact ? columnWidth - 47 : columnWidth, 20, Component.literal("Colour override; blank uses tier colours"));
         colourField = field;
         field.setMaxLength(7);
         field.setBordered(false);
         field.setValue(draft.customColour);
-        field.setHint(Component.literal(compact ? "Tier colours" : "Default tier colours"));
+        field.setHint(Component.literal(compact ? "Tier colours" : "Default tier colours").withColor(TaggerWidgets.MUTED));
         field.setTextColor(0xFFE8ECE9);
         field.setResponder(value -> { draft.customColour = value; updatePreview(); if (validationError.isEmpty()) persist(); });
         field.setTooltip(Tooltip.create(Component.literal("Optional six-digit hex colour, for example FFD700. Leave blank for gold, silver, bronze and purple. Icons keep their own colours.")));
@@ -89,6 +88,7 @@ public final class TaggerSettingsScreen extends Screen {
         addRenderableWidget(details);
         Button reset = TaggerWidgets.action("Reset", 52, false, pressed -> {
             draft = new TaggerConfig();
+            updatePreview();
             persist();
             rebuildWidgets();
         });
@@ -173,11 +173,6 @@ public final class TaggerSettingsScreen extends Screen {
         g.fill(x, y, x + 2, y + previewHeight, 0xAA85DBDA);
         g.text(font, "NAMEPLATE PREVIEW", x + 10, y + (compact ? 6 : 8), TaggerWidgets.MUTED);
         g.centeredText(font, preview, x + w / 2, y + (compact ? 22 : 29), TaggerWidgets.TEXT);
-        if (colourField != null) {
-            g.fill(colourField.getX() - 4, colourField.getY() - 3, colourField.getRight() + 2, colourField.getBottom(), 0x50130F20);
-            g.fill(colourField.getX() - 4, colourField.getBottom(), colourField.getRight() + 2, colourField.getBottom() + 1,
-                    validationError.isEmpty() ? TaggerWidgets.LINE : 0xFFE0BE83);
-        }
         var state = AfriTiersClient.instance().repository().state();
         int statusColor = switch (state.phase()) {
             case READY -> TaggerWidgets.GREEN;
