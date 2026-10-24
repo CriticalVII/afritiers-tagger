@@ -16,7 +16,7 @@ import za.co.afritiers.tagger.ranking.*;
 import java.util.Comparator;
 
 /** Read-only player profiles share the settings panel's native widgets and colours. */
-public final class PlayerSearchScreen extends Screen {
+public final class ProfilesScreen extends Screen {
     private final TaggerSettingsScreen owner;
     private String input = "", requested = "", apiName = "", feedback = "";
     private Rankings snapshot = Rankings.EMPTY;
@@ -25,9 +25,11 @@ public final class PlayerSearchScreen extends Screen {
     private Button searchButton;
     private int x, y, w, h;
 
-    public PlayerSearchScreen(TaggerSettingsScreen owner) {
-        super(Component.literal("AfriTiers players"));
+    public ProfilesScreen(TaggerSettingsScreen owner) {
+        super(Component.literal("AfriTiers profiles"));
         this.owner = owner;
+        input = net.minecraft.client.Minecraft.getInstance().getUser().getName();
+        requested = input;
     }
 
     @Override protected void init() {
@@ -41,11 +43,11 @@ public final class PlayerSearchScreen extends Screen {
         x = (width - w) / 2; y = (height - h) / 2;
         Button settings = new TaggerWidgets.Action("Settings", 64, 18, false, pressed -> onClose());
         settings.setPosition(x + w - 148, y + 9); addRenderableWidget(settings);
-        Button players = new TaggerWidgets.Action("Players", 64, 18, true, pressed -> { });
+        Button players = new TaggerWidgets.Action("Profiles", 64, 18, true, pressed -> { });
         players.setPosition(x + w - 78, y + 9); addRenderableWidget(players);
         searchButton = TaggerWidgets.action("Search", 60, true, pressed -> search());
-        searchButton.setPosition(x + w - 72, y + 42);
-        searchField = new EditBox(font, w - 90, 20, Component.literal("Player username"));
+        searchButton.setPosition(x + w - 148, y + 42);
+        searchField = new EditBox(font, w - 166, 20, Component.literal("Player username"));
         searchField.setPosition(x + 12, y + 42);
         searchField.setMaxLength(16);
         searchField.setHint(Component.literal("Player username"));
@@ -53,6 +55,11 @@ public final class PlayerSearchScreen extends Screen {
         searchField.setResponder(value -> { input = value; searchButton.active = validInput(); });
         searchField.setTooltip(Tooltip.create(Component.literal("Search a Minecraft username or a saved alias. Paid name changes are resolved automatically.")));
         addRenderableWidget(searchField); addRenderableWidget(searchButton);
+        Button self = TaggerWidgets.action("My profile", 70, false, pressed -> {
+            input = minecraft.getUser().getName();
+            search();
+        });
+        self.setPosition(x + w - 82, y + 42); addRenderableWidget(self);
         searchButton.active = validInput();
         if (requested.isEmpty()) setInitialFocus(searchField);
 
@@ -146,7 +153,7 @@ public final class PlayerSearchScreen extends Screen {
             if (phase == RankingRepository.Phase.ERROR) message = "Stats unavailable — use Refresh to retry";
             g.text(font, font.plainSubstrByWidth(message, w - 24), x + 12, y + 85, TaggerWidgets.MUTED, false);
             if (!requested.isEmpty() && phase != RankingRepository.Phase.ERROR && phase != RankingRepository.Phase.LOADING) {
-                g.text(font, font.plainSubstrByWidth("Check the username or try a saved alias.", w - 24), x + 12, y + 105, TaggerWidgets.MUTED, false);
+                g.text(font, font.plainSubstrByWidth(requested + " has no recorded tiers yet.", w - 24), x + 12, y + 105, TaggerWidgets.MUTED, false);
                 g.text(font, font.plainSubstrByWidth(AfriTiersClient.instance().paidNames().status(), w - 24), x + 12, y + 121, TaggerWidgets.MUTED, false);
             }
         }
