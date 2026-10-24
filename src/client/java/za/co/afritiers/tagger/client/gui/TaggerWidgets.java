@@ -3,6 +3,7 @@ package za.co.afritiers.tagger.client.gui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import java.util.function.BooleanSupplier;
@@ -65,11 +66,24 @@ final class TaggerWidgets {
         }
     }
 
+    static final class Input extends EditBox {
+        Input(int width, int height, Component label) {
+            super(Minecraft.getInstance().font, width, height, label);
+            setBordered(false);
+            setTextColor(TEXT);
+        }
+        @Override public void extractWidgetRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+            g.fill(getX() - 4, getY() - 3, getRight() + 2, getBottom(), 0x50130F20);
+            g.fill(getX() - 4, getBottom(), getRight() + 2, getBottom() + 1, isFocused() ? GREEN : LINE);
+            super.extractWidgetRenderState(g, mouseX, mouseY, delta);
+        }
+    }
+
     static final class Toggle extends Action {
         private final String label, description;
         private final BooleanSupplier value;
         Toggle(String label, String description, int width, boolean compact, BooleanSupplier value, Consumer<Boolean> change) {
-            super(label + ": " + (value.getAsBoolean() ? "ON" : "OFF"), width, compact ? 26 : 38, false, button -> {
+            super(label + ": " + (value.getAsBoolean() ? "ON" : "OFF"), width, compact ? 26 : 34, false, button -> {
                 change.accept(!value.getAsBoolean());
                 button.setMessage(Component.literal(label + ": " + (value.getAsBoolean() ? "ON" : "OFF")));
             });
@@ -79,11 +93,11 @@ final class TaggerWidgets {
         @Override protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
             row(g, this, hoverAmount());
             var font = Minecraft.getInstance().font;
-            g.text(font, font.plainSubstrByWidth(label, width - 48), getX() + 8, getY() + (height < 38 ? 9 : 7), TEXT);
-            if (height >= 38) g.text(font, font.plainSubstrByWidth(description, width - 16), getX() + 8, getY() + 23, MUTED);
+            g.text(font, font.plainSubstrByWidth(label, width - 48), getX() + 8, getY() + (height < 34 ? 9 : 6), TEXT);
+            if (height >= 34) g.text(font, font.plainSubstrByWidth(description, width - 16), getX() + 8, getY() + 21, MUTED);
             int right = getRight() - 7;
             boolean on = value.getAsBoolean();
-            int chipY = getY() + (height < 38 ? 7 : 5);
+            int chipY = getY() + (height < 34 ? 7 : 5);
             g.fill(right - 27, chipY, right, chipY + 13, on ? 0x706C4D95 : 0x402B2832);
             g.fill(right - 27, chipY, right - 25, chipY + 13, on ? GREEN : 0xFF787280);
             g.centeredText(font, on ? "ON" : "OFF", right - 12, chipY + 3, on ? TEXT : MUTED);
@@ -93,7 +107,7 @@ final class TaggerWidgets {
     static final class Mode extends Action {
         private final Supplier<Component> value;
         Mode(int width, boolean compact, Supplier<Component> value, OnPress action) {
-            super("Ranking mode", width, compact ? 26 : 38, false, button -> {
+            super("Ranking mode", width, compact ? 26 : 34, false, button -> {
                 action.onPress(button);
                 button.setMessage(Component.literal("Ranking mode: ").append(value.get()));
             });
@@ -104,8 +118,8 @@ final class TaggerWidgets {
         @Override protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
             row(g, this, hoverAmount());
             var font = Minecraft.getInstance().font;
-            if (height >= 38) g.text(font, "Ranking mode", getX() + 8, getY() + 6, MUTED);
-            int textY = getY() + (height < 38 ? 9 : 22);
+            if (height >= 34) g.text(font, "Ranking mode", getX() + 8, getY() + 5, MUTED);
+            int textY = getY() + (height < 34 ? 9 : 21);
             g.enableScissor(getX() + 7, textY - 2, getRight() - 19, getBottom());
             g.text(font, value.get(), getX() + 8, textY, TEXT);
             g.disableScissor();

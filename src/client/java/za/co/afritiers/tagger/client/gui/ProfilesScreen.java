@@ -47,7 +47,7 @@ public final class ProfilesScreen extends Screen {
         players.setPosition(x + w - 78, y + 9); addRenderableWidget(players);
         searchButton = TaggerWidgets.action("Search", 60, true, pressed -> search());
         searchButton.setPosition(x + w - 148, y + 42);
-        searchField = new EditBox(font, w - 166, 20, Component.literal("Player username"));
+        searchField = new TaggerWidgets.Input(w - 166, 20, Component.literal("Player username"));
         searchField.setPosition(x + 12, y + 42);
         searchField.setMaxLength(16);
         searchField.setBordered(false);
@@ -97,7 +97,7 @@ public final class ProfilesScreen extends Screen {
         tiers.stream().sorted(Comparator.comparing(Tier::retired).thenComparingInt(Tier::strength).thenComparing(Tier::mode)).forEach(tier -> {
             Component text = Component.empty().append(ModeIcons.component(tier.mode()))
                     .append(Component.literal(" " + Tier.modeLabel(tier.mode()) + ": ").withColor(TaggerWidgets.TEXT))
-                    .append(Component.literal(tier.level()).withColor(AfriTiersClient.instance().config().colour(tier.level())))
+                    .append(Component.literal(tier.level()).withColor(new za.co.afritiers.tagger.config.TaggerConfig().colour(tier.level())))
                     .append(Component.literal(tier.retired() ? " (retired)" : "").withColor(TaggerWidgets.MUTED));
             rows.addChild(new ProfileLine(contentWidth, text));
         });
@@ -116,7 +116,7 @@ public final class ProfilesScreen extends Screen {
             java.util.function.Supplier<net.minecraft.world.entity.player.PlayerSkin> skinSource = online != null
                     ? online::getSkin : self ? minecraft.getSkinManager().createLookup(minecraft.getGameProfile(), true)
                     : DefaultPlayerSkin::getDefaultSkin;
-            int skinHeight = Math.max(50, Math.min(220, h - 162));
+            int skinHeight = Math.max(50, Math.min(220, h - 174));
             var skin = new PlayerSkinWidget(132, skinHeight, minecraft.getEntityModels(), skinSource);
             skin.setPosition(x + 12, y + 102); addRenderableWidget(skin);
             var caption = new ProfileLine(132, Component.literal(self ? "YOUR PROFILE" : online == null ? "Default skin" : "Online skin").withColor(TaggerWidgets.MUTED));
@@ -149,8 +149,6 @@ public final class ProfilesScreen extends Screen {
         g.text(font, Component.literal("AfriTiers").withStyle(style -> style.withBold(true)), x + 12, y + 10, TaggerWidgets.TEXT);
         g.text(font, "PLAYER PROFILES", x + 12, y + 22, TaggerWidgets.MUTED);
         g.fill(x + 12, y + 32, x + w - 12, y + 33, TaggerWidgets.LINE);
-        g.fill(searchField.getX() - 4, searchField.getY() - 3, searchField.getRight() + 2, searchField.getBottom(), 0x50130F20);
-        g.fill(searchField.getX() - 4, searchField.getBottom(), searchField.getRight() + 2, searchField.getBottom() + 1, TaggerWidgets.LINE);
         var state = AfriTiersClient.instance().playerSearchRepository().state();
         var profile = snapshot.profile(apiName);
         int contentX = x + (w >= 340 ? 158 : 12), contentWidth = w - (w >= 340 ? 182 : 36);
