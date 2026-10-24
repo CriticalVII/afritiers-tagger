@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Read-only connection diagnostics; returning to settings preserves its draft. */
+/** Read-only connection diagnostics alongside the automatically saved settings. */
 final class ConnectionDetailsScreen extends Screen {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm:ss").withZone(ZoneId.systemDefault());
@@ -70,7 +70,7 @@ final class ConnectionDetailsScreen extends Screen {
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-        g.fill(0, 0, width, height, 0x65080D0F);
+        g.fill(0, 0, width, height, 0x28090A13);
         TaggerWidgets.panel(g, x, y, w, h);
         g.text(font, title, x + 14, y + 15, TaggerWidgets.TEXT);
         g.fill(x + 14, y + 31, x + w - 14, y + 32, TaggerWidgets.LINE);
