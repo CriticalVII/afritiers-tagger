@@ -55,7 +55,7 @@ public final class TaggerConfig {
             case '1' -> 0xFFD700;
             case '2' -> 0xC0C0C0;
             case '3' -> 0xCD7F32;
-            default -> 0xAAAAAA;
+            default -> 0xB58AE8;
         };
     }
 }
