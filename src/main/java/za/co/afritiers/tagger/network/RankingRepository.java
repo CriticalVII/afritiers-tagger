@@ -40,9 +40,21 @@ public final class RankingRepository implements AutoCloseable {
 
     public synchronized void connect() {
         if (closed) return;
+        if (connected) { worldChanged(); return; }
         resetSession();
         connected = true;
         if (enabled) start(); else inactive();
+    }
+
+    /** Queue one fresh global snapshot after a world/teleport transfer without blanking valid tiers. */
+    public synchronized void worldChanged() {
+        if (closed || !connected || !enabled || state.phase() == Phase.LOADING) return;
+        Instant now = clock.instant();
+        Instant allowed = manualAllowedAt.isAfter(retryNotBefore) ? manualAllowedAt : retryNotBefore;
+        if (now.isBefore(allowed)) {
+            state = new State(state.phase(), state.rankings(), state.lastAttempt(), state.lastSuccess(), allowed,
+                    "World changed; refresh queued after cooldown");
+        } else start();
     }
 
     public synchronized void disconnect() {
