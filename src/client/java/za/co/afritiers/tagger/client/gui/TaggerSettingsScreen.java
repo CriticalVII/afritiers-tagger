@@ -103,13 +103,7 @@ public final class TaggerSettingsScreen extends Screen {
     }
 
     private void addTabs() {
-        Button settings = new TaggerWidgets.Tab("Settings", true, pressed -> { });
-        settings.setPosition(panelX + panelWidth - 148, panelY + 9);
-        addRenderableWidget(settings);
-        Button search = new TaggerWidgets.Tab("Profiles", false,
-                pressed -> minecraft.gui.setScreen(new ProfilesScreen(this)));
-        search.setPosition(panelX + panelWidth - 78, panelY + 9);
-        addRenderableWidget(search);
+        TaggerTabs.add(this::addRenderableWidget, this, "Settings", panelX, panelY, panelWidth);
     }
 
     private LinearLayout section(String heading, int sectionWidth) {
@@ -150,7 +144,14 @@ public final class TaggerSettingsScreen extends Screen {
     }
 
     private void persist() {
-        TaggerConfig edited = draft.copy();
+        TaggerConfig edited = AfriTiersClient.instance().config();
+        edited.enabled = draft.enabled;
+        edited.nameplates = draft.nameplates;
+        edited.tabList = draft.tabList;
+        edited.showTopTen = draft.showTopTen;
+        edited.includeRetired = draft.includeRetired;
+        edited.mode = draft.mode;
+        edited.customColour = draft.customColour;
         // An unfinished colour entry must not prevent independent toggles from saving.
         if (!validationError.isEmpty()) edited.customColour = AfriTiersClient.instance().config().customColour;
         try { AfriTiersClient.instance().saveConfig(edited); feedback = "Saved automatically"; }
@@ -165,7 +166,7 @@ public final class TaggerSettingsScreen extends Screen {
         g.fill(0, 0, width, height, 0x28090A13);
         TaggerWidgets.panel(g, panelX, panelY, panelWidth, panelHeight);
         g.text(font, Component.literal("AfriTiers").withStyle(style -> style.withBold(true)), panelX + 12, panelY + (compact ? 13 : 10), TaggerWidgets.TEXT);
-        if (!compact) g.text(font, "TIER TAGGER", panelX + 12, panelY + 22, TaggerWidgets.MUTED);
+        if (!compact && panelWidth >= 380) g.text(font, "TIER TAGGER", panelX + 12, panelY + 22, TaggerWidgets.MUTED);
         g.fill(panelX + 12, panelY + (compact ? 26 : 32), panelX + panelWidth - 12, panelY + (compact ? 27 : 33), TaggerWidgets.LINE);
         int x = panelX + 12, y = panelY + (compact ? 34 : 42), w = panelWidth - 24;
         int previewHeight = compact ? 36 : 50;

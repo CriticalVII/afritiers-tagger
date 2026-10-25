@@ -9,6 +9,10 @@ public final class TaggerConfig {
     public boolean tabList = true;
     public boolean includeRetired = true;
     public boolean showTopTen = false;
+    public boolean waitlistNotifications = true;
+    public boolean waitlistSound = true;
+    /** Empty is opt-in: no background polling or alerts until a mode is selected. */
+    public java.util.Set<String> waitlistModes = new java.util.LinkedHashSet<>();
     public String mode = "strongest";
     /** Empty uses tier colours; otherwise an explicit six-digit RGB value. */
     public String customColour = "";
@@ -22,6 +26,9 @@ public final class TaggerConfig {
         copy.tabList = tabList;
         copy.includeRetired = includeRetired;
         copy.showTopTen = showTopTen;
+        copy.waitlistNotifications = waitlistNotifications;
+        copy.waitlistSound = waitlistSound;
+        copy.waitlistModes = waitlistModes == null ? new java.util.LinkedHashSet<>() : new java.util.LinkedHashSet<>(waitlistModes);
         copy.mode = mode;
         copy.customColour = customColour;
         copy.usernameAliases = usernameAliases == null ? new java.util.LinkedHashMap<>() : new java.util.LinkedHashMap<>(usernameAliases);
@@ -29,6 +36,11 @@ public final class TaggerConfig {
     }
 
     public void validate() {
+        if (waitlistModes == null) waitlistModes = new java.util.LinkedHashSet<>();
+        if (waitlistModes.size() > 128) throw new IllegalArgumentException("At most 128 waitlist subscriptions are supported");
+        var normalizedModes = new java.util.LinkedHashSet<String>();
+        for (String mode : waitlistModes) normalizedModes.add(za.co.afritiers.tagger.waitlist.Waitlists.modeKey(mode));
+        waitlistModes = normalizedModes;
         if (usernameAliases == null) usernameAliases = new java.util.LinkedHashMap<>();
         if (usernameAliases.size() > 128) throw new IllegalArgumentException("At most 128 username aliases are supported");
         var normalizedAliases = new java.util.LinkedHashMap<String, String>();

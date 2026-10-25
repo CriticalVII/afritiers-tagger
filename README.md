@@ -8,13 +8,14 @@ A client-side Fabric mod for **Minecraft Java 26.2**, powered by the [AfriTiers 
 
 - Mode icons and coloured tiers on player nametags and the Tab list.
 - Transparent settings and a Profiles tab with your account, username search, region, points and rankings.
+- Per-mode waitlist notifications in chat, with an optional sound and Discord join links.
 - Optional gold `#1`–`#10` labels, with Tab alignment only for top-ten players.
 - Automatically saved Mod Menu settings, a complete mode picker and a rebindable **K** shortcut.
 - Username-based cracked/offline matching, verified paid-account rename recovery and saved aliases.
 
 ## Install
 
-Download [afritiers-tagger-1.6.0.jar](releases/afritiers-tagger-1.6.0.jar) or get it from [GitHub Releases](https://github.com/CriticalVII/afritiers-tagger/releases/latest).
+Download [afritiers-tagger-1.7.0.jar](releases/afritiers-tagger-1.7.0.jar) or get it from [GitHub Releases](https://github.com/CriticalVII/afritiers-tagger/releases/latest).
 
 Verify downloads with the SHA-256 value in [releases/SHA256SUMS.txt](releases/SHA256SUMS.txt).
 
@@ -32,12 +33,14 @@ Install [Fabric Loader](https://fabricmc.net/use/installer/) and [Fabric API](ht
 
 Press **K**, run `/afritiers config`, or open **Mods → AfriTiers Tier Tagger → Configure**. Click Ranking mode to choose a specific mode or Strongest tier. Changes save immediately; use Done or Escape to close. Invalid colour entries are not saved. Top 10 rank is off by default; retired tiers are included by default. The preview starts with Sword HT1 and a gold #1 as an example.
 
-Profiles opens your own account automatically. Search another username with Search or Enter, and use My profile to return to your account. Tier colours are gold for tier 1, silver for tier 2, bronze for tier 3, and purple for tiers 4–5. The optional colour override applies to tags; profile stats retain tier colours. Nametags keep the `|` separator; Tab does not add one.
+Profiles displays your own account with an empty search box. Search another username with Search or Enter, or run `/tiers <player>` to open their profile directly. Use My profile to return to your account and clear the search box. Tier colours are gold for tier 1, silver for tier 2, bronze for tier 3, and purple for tiers 4–5. The optional colour override applies to tags; profile stats retain tier colours. Nametags keep the `|` separator; Tab does not add one.
 
 Cracked/offline accounts match by username. Paid rename recovery uses verified paid IDs from AfriTiers and the official current-name lookup. Server/offline UUIDs are never used for tier matching. Your profile uses your account skin; other profiles use an available online skin or a labelled default skin.
 
 | Command | Action |
 | --- | --- |
+| `/tiers <player>` | Open Profiles and search the specified player |
+| `/tiers` | Open your own profile with an empty search box |
 | `/afritiers config` | Open settings |
 | `/afritiers refresh` | Request a refresh |
 | `/afritiers status [username]` | Show connection or player details |
@@ -46,6 +49,14 @@ Cracked/offline accounts match by username. Paid rename recovery uses verified p
 | `/afritiers alias list` | List aliases |
 
 Settings are saved in `config/afritiers_tagger.json`. Joining a server resets rankings and name lookups and requests a fresh sync. Existing request cooldowns still apply. Rankings also refresh automatically and depend on upstream API availability.
+
+## Waitlist notifications
+
+Open **Waitlists** and enable the modes you want to watch. No modes are selected by default. Choices save automatically; All and None change the entire selection. Notifications pauses alerts without clearing your choices, and Sound controls the notification chime.
+
+The mod checks the [AfriTiers queues API](https://afritiers.co.za/api/queues) about every 30 seconds while you are in a world with watched modes, or while the Waitlists tab is open. Selected waitlists notify you in chat once per opening, including when already open at the first sync. A new API event can trigger a new alert. Available Discord channel links appear as a clickable Join action.
+
+Alerts work independently of tier-tag visibility and are only delivered in game. Repeated polls and server reconnects do not repeat an alert for the same opening. API errors and stale responses do not trigger alerts; requests retry automatically and respect service cooldowns.
 
 ## Build
 
