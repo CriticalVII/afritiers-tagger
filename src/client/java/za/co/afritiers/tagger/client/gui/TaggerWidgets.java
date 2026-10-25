@@ -82,6 +82,8 @@ final class TaggerWidgets {
     static final class Toggle extends Action {
         private final String label, description;
         private final BooleanSupplier value;
+        private Component icon;
+        void setIcon(Component icon) { this.icon = icon; }
         Toggle(String label, String description, int width, boolean compact, BooleanSupplier value, Consumer<Boolean> change) {
             super(label + ": " + (value.getAsBoolean() ? "ON" : "OFF"), width, compact ? 26 : 34, false, button -> {
                 change.accept(!value.getAsBoolean());
@@ -93,7 +95,9 @@ final class TaggerWidgets {
         @Override protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
             row(g, this, hoverAmount());
             var font = Minecraft.getInstance().font;
-            g.text(font, font.plainSubstrByWidth(label, width - 48), getX() + 8, getY() + (height < 34 ? 9 : 6), TEXT);
+            int labelY = getY() + (height < 34 ? 9 : 6);
+            if (icon != null) g.text(font, icon, getX() + 7, labelY, TEXT);
+            g.text(font, font.plainSubstrByWidth(label, width - (icon == null ? 48 : 64)), getX() + (icon == null ? 8 : 24), labelY, TEXT);
             if (height >= 34) g.text(font, font.plainSubstrByWidth(description, width - 16), getX() + 8, getY() + 21, MUTED);
             int right = getRight() - 7;
             boolean on = value.getAsBoolean();

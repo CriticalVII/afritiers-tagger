@@ -10,6 +10,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ import za.co.afritiers.tagger.network.HttpProfileLookup;
 import za.co.afritiers.tagger.network.HttpRankingSource;
 import za.co.afritiers.tagger.network.PaidNameResolver;
 import za.co.afritiers.tagger.network.RankingRepository;
+import za.co.afritiers.tagger.network.HttpQueueSource;
+import za.co.afritiers.tagger.network.QueueRepository;
 import za.co.afritiers.tagger.ranking.Rankings;
 import za.co.afritiers.tagger.ranking.Tier;
 
@@ -36,12 +39,16 @@ public final class AfriTiersClient implements ClientModInitializer {
     private PaidNameResolver paidNames;
     private RankingRepository browser;
     private boolean browsingPlayers;
+    private QueueRepository waitlists;
+    private boolean browsingWaitlists;
 
     public static AfriTiersClient instance() { return instance; }
     public TaggerConfig config() { return config.copy(); }
     TaggerConfig activeConfig() { return config; }
     public RankingRepository repository() { return repository; }
     public PaidNameResolver paidNames() { return paidNames; }
+    public QueueRepository waitlists() { return waitlists; }
+    public void browseWaitlists(boolean browsing) { browsingWaitlists = browsing; }
     public String configWarning() { return store.warning(); }
 
     @Override public void onInitializeClient() {
@@ -51,6 +58,7 @@ public final class AfriTiersClient implements ClientModInitializer {
         repository = new RankingRepository(new HttpRankingSource());
         browser = new RankingRepository(new HttpRankingSource());
         paidNames = new PaidNameResolver(new HttpProfileLookup());
+        waitlists = new QueueRepository(new HttpQueueSource());
         repository.setEnabled(config.enabled);
         KeyMapping openSettings = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.afritiers_tagger.settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K,
@@ -60,11 +68,23 @@ public final class AfriTiersClient implements ClientModInitializer {
             repository.connect();
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { repository.disconnect(); paidNames.setActive(false); });
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { repository.close(); browser.close(); paidNames.close(); });
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { repository.close(); browser.close(); paidNames.close(); waitlists.close(); });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             repository.tick();
             if (browsingPlayers) browser.tick();
             updatePaidNames(client);
+            var watched = config.waitlistNotifications ? config.waitlistModes : java.util.Set.<String>of();
+            var notifications = waitlists.tick(client.player != null && client.getConnection() != null, browsingWaitlists, watched);
+            for (var queue : notifications) {
+                Component message = Component.literal("[AfriTiers] ").withColor(0xC8ACF2)
+                        .append(ModeIcons.component(queue.mode()))
+                        .append(Component.literal(" " + Tier.modeLabel(queue.mode()) + " waitlist is open!").withColor(0xFFD700));
+                if (queue.joinUrl() != null) message = message.copy().append(Component.literal(" [Join]").withStyle(style -> style
+                        .withColor(0x85DBDA).withUnderlined(true).withClickEvent(new net.minecraft.network.chat.ClickEvent.OpenUrl(queue.joinUrl()))));
+                client.gui.hud.getChat().addClientSystemMessage(message);
+            }
+            if (!notifications.isEmpty() && config.waitlistSound && client.player != null)
+                client.player.playSound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_PLING.value(), 0.65F, 1.2F);
             while (openSettings.consumeClick()) client.gui.setScreen(new TaggerSettingsScreen(client.gui.screen()));
         });
         AfriTiersCommands.register(this);

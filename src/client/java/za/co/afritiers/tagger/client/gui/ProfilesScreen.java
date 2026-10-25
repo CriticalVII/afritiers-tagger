@@ -47,10 +47,7 @@ public final class ProfilesScreen extends Screen {
         w = Math.min(520, width - 20);
         h = Math.min(348, height - 16);
         x = (width - w) / 2; y = (height - h) / 2;
-        Button settings = new TaggerWidgets.Tab("Settings", false, pressed -> onClose());
-        settings.setPosition(x + w - 148, y + 9); addRenderableWidget(settings);
-        Button players = new TaggerWidgets.Tab("Profiles", true, pressed -> { });
-        players.setPosition(x + w - 78, y + 9); addRenderableWidget(players);
+        TaggerTabs.add(this::addRenderableWidget, owner, "Profiles", x, y, w);
         searchButton = TaggerWidgets.action("Search", 60, true, pressed -> search());
         searchButton.setPosition(x + w - 148, y + 42);
         searchField = new TaggerWidgets.Input(w - 166, 20, Component.literal("Player username"));
@@ -156,7 +153,7 @@ public final class ProfilesScreen extends Screen {
         g.fill(0, 0, width, height, 0x28090A13);
         TaggerWidgets.panel(g, x, y, w, h);
         g.text(font, Component.literal("AfriTiers").withStyle(style -> style.withBold(true)), x + 12, y + 10, TaggerWidgets.TEXT);
-        g.text(font, "PLAYER PROFILES", x + 12, y + 22, TaggerWidgets.MUTED);
+        if (w >= 380) g.text(font, "PLAYER PROFILES", x + 12, y + 22, TaggerWidgets.MUTED);
         g.fill(x + 12, y + 32, x + w - 12, y + 33, TaggerWidgets.LINE);
         var state = AfriTiersClient.instance().playerSearchRepository().state();
         var profile = snapshot.profile(apiName);
