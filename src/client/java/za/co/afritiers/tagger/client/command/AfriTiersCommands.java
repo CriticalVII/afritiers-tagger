@@ -43,7 +43,7 @@ public final class AfriTiersCommands {
                         }))
                         .then(literal("status").executes(context -> commands.status(context.getSource()))
                                 .then(argument("username", StringArgumentType.word()).executes(context ->
-                                        commands.playerStatus(context.getSource(), StringArgumentType.getString(context, "username")))))));
+                                        commands.playerStatus(context.getSource(), StringArgumentType.getString(context, "username"))))));
             dispatcher.register(literal("tiers").requires(FabricClientCommandSource::attended)
                     .executes(context -> commands.openProfile(context.getSource(), null))
                     .then(argument("player", StringArgumentType.word())
