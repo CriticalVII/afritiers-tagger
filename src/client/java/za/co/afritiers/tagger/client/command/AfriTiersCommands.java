@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import za.co.afritiers.tagger.client.AfriTiersClient;
 import za.co.afritiers.tagger.client.gui.TaggerSettingsScreen;
+import za.co.afritiers.tagger.client.gui.ProfilesScreen;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -26,7 +27,8 @@ public final class AfriTiersCommands {
 
     public static void register(AfriTiersClient mod) {
         var commands = new AfriTiersCommands(mod);
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            dispatcher.register(
                 literal("afritiers")
                         .then(commands.aliases())
                         .then(literal("config").requires(FabricClientCommandSource::attended).executes(context -> {
@@ -42,6 +44,33 @@ public final class AfriTiersCommands {
                         .then(literal("status").executes(context -> commands.status(context.getSource()))
                                 .then(argument("username", StringArgumentType.word()).executes(context ->
                                         commands.playerStatus(context.getSource(), StringArgumentType.getString(context, "username")))))));
+            dispatcher.register(literal("tiers").requires(FabricClientCommandSource::attended)
+                    .executes(context -> commands.openProfile(context.getSource(), null))
+                    .then(argument("player", StringArgumentType.word())
+                            .suggests((context, builder) -> {
+                                var names = new java.util.TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+                                var connection = context.getSource().getClient().getConnection();
+                                if (connection != null) connection.getListedOnlinePlayers().forEach(info -> names.add(info.getProfile().name()));
+                                names.addAll(mod.repository().state().rankings().players().keySet());
+                                names.stream().filter(name -> name.toLowerCase(Locale.ROOT).startsWith(builder.getRemainingLowerCase()))
+                                        .limit(100).forEach(builder::suggest);
+                                return builder.buildFuture();
+                            })
+                            .executes(context -> commands.openProfile(context.getSource(), StringArgumentType.getString(context, "player")))));
+        });
+    }
+
+    private int openProfile(FabricClientCommandSource source, String username) {
+        if (username != null && !username.matches("[A-Za-z0-9_]{1,16}")) {
+            source.sendError(Component.literal("Use a Minecraft username (1–16 letters, numbers or underscores)."));
+            return 0;
+        }
+        Minecraft client = source.getClient();
+        client.schedule(() -> {
+            var settings = new TaggerSettingsScreen(null);
+            client.gui.setScreen(username == null ? new ProfilesScreen(settings) : new ProfilesScreen(settings, username));
+        });
+        return 1;
     }
 
     private int status(FabricClientCommandSource source) {

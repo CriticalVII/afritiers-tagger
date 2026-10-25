@@ -28,8 +28,14 @@ public final class ProfilesScreen extends Screen {
     public ProfilesScreen(TaggerSettingsScreen owner) {
         super(Component.literal("AfriTiers profiles"));
         this.owner = owner;
-        input = net.minecraft.client.Minecraft.getInstance().getUser().getName();
-        requested = input;
+        requested = net.minecraft.client.Minecraft.getInstance().getUser().getName();
+    }
+
+    public ProfilesScreen(TaggerSettingsScreen owner, String username) {
+        this(owner);
+        if (username == null || !username.matches("[A-Za-z0-9_]{1,16}")) throw new IllegalArgumentException("Invalid player username");
+        input = username;
+        requested = username;
     }
 
     @Override protected void init() {
@@ -58,8 +64,11 @@ public final class ProfilesScreen extends Screen {
         searchField.setTooltip(Tooltip.create(Component.literal("Search a Minecraft username or a saved alias. Paid name changes are resolved automatically.")));
         addRenderableWidget(searchField); addRenderableWidget(searchButton);
         Button self = TaggerWidgets.action("My profile", 70, false, pressed -> {
-            input = minecraft.getUser().getName();
-            search();
+            input = "";
+            requested = minecraft.getUser().getName();
+            feedback = "";
+            mod.requestPlayerSearch(requested);
+            rebuildWidgets();
         });
         self.setPosition(x + w - 82, y + 42); addRenderableWidget(self);
         searchButton.active = validInput();
