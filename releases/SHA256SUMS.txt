@@ -1,1 +1,1 @@
-94edf18e3630c5314ccf937d218c5aa977d12adac9afd57d1008d1b81de4aab9  afritiers-tagger-1.7.0.jar
+dc8401ee97945e55453b432a3dc348fd0bb12eda202cc4d29539addd8b025dd1  afritiers-tagger-1.7.1.jar
