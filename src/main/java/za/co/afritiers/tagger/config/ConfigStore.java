@@ -41,9 +41,26 @@ public final class ConfigStore {
         Path temporary = Files.createTempFile(file.toAbsolutePath().getParent(), "afritiers-", ".tmp");
         try {
             Files.writeString(temporary, GSON.toJson(config) + System.lineSeparator(), StandardCharsets.UTF_8);
-            try { Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
-            catch (AtomicMoveNotSupportedException ignored) { Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING); }
+            replace(temporary);
             warning = "";
         } finally { Files.deleteIfExists(temporary); }
+    }
+
+    private void replace(Path temporary) throws IOException {
+        for (int attempt = 0; ; attempt++) {
+            try {
+                try { Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+                catch (AtomicMoveNotSupportedException ignored) { Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING); }
+                return;
+            } catch (AccessDeniedException locked) {
+                // Windows may briefly lock the destination during scanning. Never delete the original to bypass it.
+                if (attempt == 3) throw locked;
+                try { Thread.sleep(25L << attempt); }
+                catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Config save interrupted while waiting for a file lock", interrupted);
+                }
+            }
+        }
     }
 }
