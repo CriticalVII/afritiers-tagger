@@ -41,6 +41,9 @@ public final class AfriTiersClient implements ClientModInitializer {
     private boolean browsingPlayers;
     private QueueRepository waitlists;
     private boolean browsingWaitlists;
+    private net.minecraft.client.multiplayer.ClientLevel observedWorld;
+    private net.minecraft.client.player.LocalPlayer observedPlayer;
+    private boolean worldRefreshRequested;
 
     public static AfriTiersClient instance() { return instance; }
     public TaggerConfig config() { return config.copy(); }
@@ -50,6 +53,7 @@ public final class AfriTiersClient implements ClientModInitializer {
     public QueueRepository waitlists() { return waitlists; }
     public void browseWaitlists(boolean browsing) { browsingWaitlists = browsing; }
     public String configWarning() { return store.warning(); }
+    public void requestWorldRefresh() { worldRefreshRequested = true; }
 
     @Override public void onInitializeClient() {
         instance = this;
@@ -64,12 +68,19 @@ public final class AfriTiersClient implements ClientModInitializer {
                 "key.afritiers_tagger.settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K,
                 KeyMapping.Category.register(Identifier.fromNamespaceAndPath("afritiers_tagger", "controls"))));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            observedWorld = null;
+            observedPlayer = null;
+            worldRefreshRequested = false;
             paidNames.resetSession();
             repository.connect();
         });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { repository.disconnect(); paidNames.setActive(false); });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            observedWorld = null; observedPlayer = null; worldRefreshRequested = false;
+            repository.disconnect(); paidNames.setActive(false);
+        });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { repository.close(); browser.close(); paidNames.close(); waitlists.close(); });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            updateWorldSession(client);
             repository.tick();
             if (browsingPlayers) browser.tick();
             updatePaidNames(client);
@@ -140,6 +151,24 @@ public final class AfriTiersClient implements ClientModInitializer {
         if (rankings.players().containsKey(key) && !rankings.paidProfiles().containsValue(key)) return;
         if (config.usernameAliases.containsKey(key)) return;
         if (!rankings.paidProfiles().isEmpty()) paidNames.request(username);
+    }
+
+    private void updateWorldSession(Minecraft client) {
+        if (client.level == null || client.player == null || client.getConnection() == null) return;
+        // JOIN already starts the first fetch; initial spawn packets belong to that same sync.
+        if (observedWorld == null) {
+            observedWorld = client.level;
+            observedPlayer = client.player;
+            worldRefreshRequested = false;
+            return;
+        }
+        boolean replaced = observedWorld != client.level || observedPlayer != client.player;
+        if (!replaced && !worldRefreshRequested) return;
+        observedWorld = client.level;
+        observedPlayer = client.player;
+        worldRefreshRequested = false;
+        if (replaced) paidNames.resetSession();
+        repository.worldChanged();
     }
 
     private void updatePaidNames(Minecraft client) {

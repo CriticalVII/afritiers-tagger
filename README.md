@@ -15,7 +15,7 @@ A client-side Fabric mod for **Minecraft Java 26.2**, powered by the [AfriTiers 
 
 ## Install
 
-Download [afritiers-tagger-1.7.0.jar](releases/afritiers-tagger-1.7.0.jar) or get it from [GitHub Releases](https://github.com/CriticalVII/afritiers-tagger/releases/latest).
+Download [afritiers-tagger-1.7.1.jar](releases/afritiers-tagger-1.7.1.jar) or get it from [GitHub Releases](https://github.com/CriticalVII/afritiers-tagger/releases/latest).
 
 Verify downloads with the SHA-256 value in [releases/SHA256SUMS.txt](releases/SHA256SUMS.txt).
 
@@ -33,7 +33,7 @@ Install [Fabric Loader](https://fabricmc.net/use/installer/) and [Fabric API](ht
 
 Press **K**, run `/afritiers config`, or open **Mods → AfriTiers Tier Tagger → Configure**. Click Ranking mode to choose a specific mode or Strongest tier. Changes save immediately; use Done or Escape to close. Invalid colour entries are not saved. Top 10 rank is off by default; retired tiers are included by default. The preview starts with Sword HT1 and a gold #1 as an example.
 
-Profiles displays your own account with an empty search box. Search another username with Search or Enter, or run `/tiers <player>` to open their profile directly. Use My profile to return to your account and clear the search box. Tier colours are gold for tier 1, silver for tier 2, bronze for tier 3, and purple for tiers 4–5. The optional colour override applies to tags; profile stats retain tier colours. Nametags keep the `|` separator; Tab does not add one.
+Profiles displays your own account with an empty search box. Search another username with Search or Enter, or run `/tiers <player>` to open their profile directly. Use My profile to return to your account and clear the search box. Tier colours are gold for tier 1, silver for tier 2, bronze for tier 3, and purple for tiers 4–5. The optional colour override applies to tags; profile stats retain tier colours. Nametags and Tab use spaces between the icon, tier and username, with no added pipe separator.
 
 Cracked/offline accounts match by username. Paid rename recovery uses verified paid IDs from AfriTiers and the official current-name lookup. Server/offline UUIDs are never used for tier matching. Your profile uses your account skin; other profiles use an available online skin or a labelled default skin.
 
@@ -48,7 +48,7 @@ Cracked/offline accounts match by username. Paid rename recovery uses verified p
 | `/afritiers alias remove <current>` | Remove an alias |
 | `/afritiers alias list` | List aliases |
 
-Settings are saved in `config/afritiers_tagger.json`. Joining a server resets rankings and name lookups and requests a fresh sync. Existing request cooldowns still apply. Rankings also refresh automatically and depend on upstream API availability.
+Settings are saved in `config/afritiers_tagger.json`. Joining a server requests a fresh sync. World changes, respawns and server teleports also refresh tiers, including hub-to-Practice transfers that keep the same connection. Valid tiers remain visible while these transfer refreshes wait for the existing request cooldown. Rapid transfers share one pending refresh. Rankings also refresh automatically and depend on upstream API availability.
 
 ## Waitlist notifications
 
