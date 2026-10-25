@@ -46,7 +46,7 @@ public final class TagFormatter {
                 .append(" ")
                 .append(Component.literal(tier.level() + (tier.retired() ? " (retired)" : ""))
                         .withStyle(style -> style.withFont(FontDescription.DEFAULT).withColor(config.colour(tier.level()))))
-                .append(Component.literal(tabList ? " " : " | ").withColor(0xAAAAAA))
+                .append(" ")
                 .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal(tier.label()))));
     }
 }
