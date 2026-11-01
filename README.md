@@ -19,6 +19,8 @@ Download [afritiers-tagger-1.7.1.jar](releases/afritiers-tagger-1.7.1.jar) or ge
 
 Verify downloads with the SHA-256 value in [releases/SHA256SUMS.txt](releases/SHA256SUMS.txt).
 
+See the [changelog](CHANGELOG.md) for what's new.
+
 | Requirement | Version |
 | --- | --- |
 | Minecraft Java | 26.2 |
